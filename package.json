@@ -1,0 +1,20 @@
+{
+  "name": "@vibeus/bridge-sdk",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "format": "biome format --write",
+    "check:fix": "biome check --write",
+    "check": "biome check",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.4.13",
+    "@types/bun": "latest",
+    "typescript": "6.0.3"
+  }
+}
