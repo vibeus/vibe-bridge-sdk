@@ -44,3 +44,23 @@ The `experimental: { "claude/channel": {} }` capability and the `notifications/c
 ## CI
 
 `.github/workflows/ci.yml` runs `bun run check` and `bun run typecheck` on push/PR to `main`, pinned to the same Bun version used locally.
+
+## Releasing `@vibeus/bridge-contracts`
+
+The in-tree `packages/contracts/package.json` keeps source-pointing `exports` (`./index.ts`, `./channel.ts`) so Bun + tsc work with no build step. The published artifact is a separately-prepared bundle under `packages/contracts/dist/` with a rewritten `package.json` and compiled `.js`/`.d.ts`.
+
+Build pipeline:
+
+- `bun run --cwd packages/contracts build` — `tsc -p tsconfig.build.json` emits `.js` + `.d.ts` (+ sourcemaps) to `dist/`. Uses `rewriteRelativeImportExtensions` so `./channel.ts` becomes `./channel.js` on emit. Source files therefore use explicit `.ts` extensions on relative imports.
+- `bun run --cwd packages/contracts prepare-publish` — runs build, then `scripts/prepare-publish.ts` writes a publish-ready `dist/package.json` (exports point at compiled files) and patches any leftover `./*.ts` references in emitted `.d.ts` files to `./*.js` (tsc 6.0.3 doesn't rewrite declaration emit).
+- Always publish from `packages/contracts/dist/` — never from the package root, which still points at source.
+
+Release procedure (run by Claude on request):
+
+1. Bump `packages/contracts/package.json` `"version"` (semver).
+2. Commit the bump as `chore(contracts): release vX.Y.Z` and push to `main`.
+3. Tag: `git tag contracts-vX.Y.Z && git push origin contracts-vX.Y.Z`. The tag version must match `package.json`; the workflow verifies and fails otherwise.
+4. `.github/workflows/release-contracts.yml` builds, prepares the bundle, and runs `npm publish --provenance --access public` from `dist/`. Auth is via npm trusted publisher (OIDC) — the workflow only needs `id-token: write` (already set on the job), which doubles as the provenance signal. No `NPM_TOKEN` required.
+5. To dry-run without tagging: trigger the workflow manually with `dry-run: true` (`gh workflow run release-contracts.yml -f dry-run=true`).
+
+Do not bump or tag without the user's explicit go-ahead — releases are user-triggered.

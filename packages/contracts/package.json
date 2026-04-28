@@ -1,9 +1,29 @@
 {
   "name": "@vibeus/bridge-contracts",
-  "version": "1.0.0",
+  "version": "0.2.1",
+  "description": "Shared frame types for the Vibe websocket↔MCP bridge.",
+  "license": "MIT",
   "type": "module",
   "exports": {
     ".": "./index.ts",
     "./channel": "./channel.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepare-publish": "bun run build && bun ./scripts/prepare-publish.ts",
+    "clean": "rm -rf dist"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vibeus/vibe-bridge-sdk.git",
+    "directory": "packages/contracts"
+  },
+  "homepage": "https://github.com/vibeus/vibe-bridge-sdk/tree/main/packages/contracts",
+  "bugs": {
+    "url": "https://github.com/vibeus/vibe-bridge-sdk/issues"
   }
 }
