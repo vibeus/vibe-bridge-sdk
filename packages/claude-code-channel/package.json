@@ -1,12 +1,38 @@
 {
   "name": "@vibeus/claude-code-channel",
-  "version": "1.0.0",
+  "version": "0.2.0",
+  "description": "MCP stdio server that bridges a WebSocket peer to a Claude Code session.",
+  "license": "MIT",
   "type": "module",
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "scripts": {
-    "start": "bun ./channel.ts"
+    "start": "bun ./channel.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "prepare-publish": "bun run build && bun ./scripts/prepare-publish.ts",
+    "clean": "rm -rf dist"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/ws": "^8.5.13",
     "@vibeus/bridge-contracts": "workspace:*"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vibeus/vibe-bridge-sdk.git",
+    "directory": "packages/claude-code-channel"
+  },
+  "homepage": "https://github.com/vibeus/vibe-bridge-sdk/tree/main/packages/claude-code-channel",
+  "bugs": {
+    "url": "https://github.com/vibeus/vibe-bridge-sdk/issues"
   }
 }

@@ -3,12 +3,39 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import type { ChannelInboundFrame, ChannelOutboundFrame } from "@vibeus/bridge-contracts/channel";
-
-const WS_URL = process.env.WEBSOCKET_URL ?? "ws://localhost:8080";
-const RECONNECT_MS = Number(process.env.WEBSOCKET_RECONNECT_MS ?? 2000);
+import WebSocket from "ws";
 
 // stderr only — stdout is reserved for the MCP transport
 const log = (...args: unknown[]) => console.error("[ws-channel]", ...args);
+
+const BRIDGE_URL = process.env.VIBE_BRIDGE_URL ?? "wss://bridge.vibe.us";
+const EVENT_TYPE = process.env.VIBE_EVENT_TYPE;
+const PAT = process.env.VIBE_PAT;
+const BACKEND = process.env.VIBE_BACKEND;
+const RECONNECT_MS = Number(process.env.VIBE_RECONNECT_MS ?? 2000);
+
+if (!EVENT_TYPE) {
+  log("VIBE_EVENT_TYPE is required");
+  process.exit(1);
+}
+if (!PAT) {
+  log("VIBE_PAT is required (Bearer personal access token)");
+  process.exit(1);
+}
+
+const subscribeUrl = (() => {
+  const u = new URL(BRIDGE_URL);
+  u.pathname = "/channels/subscribe";
+  u.searchParams.set("event_type", EVENT_TYPE);
+  return u.toString();
+})();
+
+const headers: Record<string, string> = {
+  authorization: `Bearer ${PAT}`,
+};
+if (BACKEND) {
+  headers["x-vibe-backend"] = BACKEND;
+}
 
 const mcp = new Server(
   { name: "websocket-bridge", version: "0.0.1" },
@@ -28,8 +55,9 @@ let ws: WebSocket | null = null;
 let connected = false;
 
 function connect() {
-  log("connecting to", WS_URL);
-  const sock = new WebSocket(WS_URL);
+  log("connecting to", subscribeUrl);
+  const sock = new WebSocket(subscribeUrl, { headers });
+  sock.binaryType = "arraybuffer";
   ws = sock;
 
   sock.addEventListener("open", () => {
@@ -43,7 +71,13 @@ function connect() {
         ? ev.data
         : ev.data instanceof ArrayBuffer
           ? new TextDecoder().decode(ev.data)
-          : await (ev.data as Blob).text();
+          : Buffer.isBuffer(ev.data)
+            ? ev.data.toString("utf8")
+            : null;
+    if (raw === null) {
+      log("dropped message with unsupported data type");
+      return;
+    }
 
     let frame: ChannelInboundFrame;
     try {
@@ -75,12 +109,21 @@ function connect() {
 
   sock.addEventListener("close", (ev) => {
     connected = false;
-    log(`closed (code=${ev.code}); reconnecting in ${RECONNECT_MS}ms`);
+    log(
+      `closed (code=${ev.code}${ev.reason ? `, reason=${ev.reason}` : ""}); reconnecting in ${RECONNECT_MS}ms`,
+    );
     setTimeout(connect, RECONNECT_MS);
   });
 
   sock.addEventListener("error", (ev) => {
-    log("error", (ev as ErrorEvent).message ?? ev);
+    log("error", (ev as { message?: string }).message ?? ev);
+  });
+
+  // ws-specific event surfaces the HTTP response when the upgrade is rejected
+  // (e.g. 401 from invalid PAT). The DOM-style "error"/"close" alone don't
+  // expose the status code.
+  sock.on("unexpected-response", (_req, res) => {
+    log(`handshake rejected: ${res.statusCode} ${res.statusMessage ?? ""}`.trim());
   });
 }
 
