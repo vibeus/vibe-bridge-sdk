@@ -1,0 +1,9 @@
+{
+  "id": "vibe-bridge",
+  "channels": ["vibe-bridge"],
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {}
+  }
+}

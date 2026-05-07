@@ -1,0 +1,40 @@
+{
+  "name": "@vibeus/openclaw-channel",
+  "version": "0.1.0",
+  "private": true,
+  "description": "OpenClaw channel plugin that bridges WebSocket frames to OpenClaw via @vibeus/bridge-contracts.",
+  "license": "MIT",
+  "type": "module",
+  "openclaw": {
+    "compat": {
+      "pluginApi": ">=2026.1.1"
+    },
+    "build": {
+      "openclawVersion": "2026.4.1"
+    },
+    "extensions": [
+      "./index.ts"
+    ],
+    "setupEntry": "./setup-entry.ts",
+    "channel": {
+      "id": "vibe-bridge",
+      "label": "Vibe Bridge",
+      "selectionLabel": "Vibe Bridge",
+      "detailLabel": "Vibe Bridge",
+      "blurb": "Two-way channel that bridges OpenClaw to the Vibe WebSocket bridge.",
+      "order": 100,
+      "markdownCapable": false
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.5.13",
+    "@vibeus/bridge-contracts": "workspace:*",
+    "openclaw": "^2026.4.1"
+  }
+}

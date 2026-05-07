@@ -14,7 +14,7 @@ Run from the repo root:
 - `bun run check` — Biome lint + format check (CI gate)
 - `bun run check:fix` — Biome lint/format with autofix
 - `bun run format` — Biome format only
-- `bun run typecheck` — `tsc --noEmit` across the workspace
+- `bun run typecheck` — `tsc --noEmit` across the workspace, then `tsc --noEmit` inside `packages/openclaw-channel` (which uses its own NodeNext tsconfig — see Architecture)
 
 Run the WebSocket↔MCP bridge locally:
 
@@ -26,10 +26,15 @@ Run the WebSocket↔MCP bridge locally:
 
 ## Architecture
 
-Two workspace packages under `packages/`:
+Three workspace packages under `packages/`:
 
 - **`@vibeus/bridge-contracts`** (`packages/contracts/`) — shared frame types only (`ChannelInboundFrame`, `ChannelOutboundFrame`). Pure types, no runtime. Re-exported via `./channel` subpath; consumed as `workspace:*`.
 - **`@vibeus/claude-code-channel`** (`packages/claude-code-channel/`) — an MCP stdio server that bridges a WebSocket peer to a Claude Code session.
+- **`@vibeus/openclaw-channel`** (`packages/openclaw-channel/`) — an OpenClaw channel plugin (in-process, loaded by the OpenClaw host as TypeScript source) that surfaces the same WebSocket+frame protocol as `@vibeus/claude-code-channel`. Private workspace package; not currently published.
+
+### Dual tsconfig setup
+
+The repo root `tsconfig.json` uses `moduleResolution: bundler` + `allowImportingTsExtensions: true` (Bun-native). That works for `contracts/` and `claude-code-channel/` but conflicts with OpenClaw's NodeNext loader, which requires `.js` extensions on relative imports of `.ts` files. So `packages/openclaw-channel/` has its own `tsconfig.json` with `module/moduleResolution: NodeNext`, and the root `tsconfig.json` excludes it under `exclude: ["packages/openclaw-channel/**"]`. The root `typecheck` script chains `bun run --cwd packages/openclaw-channel typecheck` to keep CI coverage.
 
 ### How the bridge works
 
@@ -43,6 +48,14 @@ The `ws` package is used (not the Node global `WebSocket`) because only `ws` exp
 Inbound WS frames (`ChannelInboundFrame`) are forwarded to the host as `notifications/claude/channel` MCP notifications. The host surfaces them as `<channel source="websocket-bridge" chat_id="...">` tags; `frame.id` becomes `chat_id`, and any `frame.meta` keys become extra tag attributes (the bridge always populates `meta.user_id` and `meta.event_type`). The model replies by calling the `reply` tool with that `chat_id` plus reply text — the server wraps it in a `ChannelOutboundFrame` (with `reply_to: chat_id`, fresh `id`, `ts`) and pushes it onto the WS.
 
 The `experimental: { "claude/channel": {} }` capability and the `notifications/claude/channel` method are non-standard MCP — they are the contract this bridge has with the Claude Code host. Don't rename them without updating both sides.
+
+### How `@vibeus/openclaw-channel` works
+
+OpenClaw plugins are not separate processes — the host imports the plugin's TypeScript directly. `index.ts` registers the plugin via `defineChannelPluginEntry` (channel id `vibe-bridge`); `setup-entry.ts` exposes the same plugin to OpenClaw's `channels add` CLI via `defineSetupPluginEntry`; `src/runtime.ts` holds the `PluginRuntime` singleton; `src/channel.ts` wires the OpenClaw config/setup adapters; `src/monitor.ts` runs the WebSocket loop.
+
+`src/monitor.ts` mirrors `claude-code-channel/channel.ts` — same URL shape (`${bridge_url}/channels/subscribe?event_type=...`), same `Authorization: Bearer ${pat}` + optional `x-vibe-backend` headers, same `unexpected-response` handling, same auto-reconnect — but instead of forwarding frames as MCP notifications it calls `dispatchInboundDirectDmWithRuntime` from `openclaw/plugin-sdk/direct-dm`. Each inbound `ChannelInboundFrame` becomes an OpenClaw direct DM (`messageId = frame.id`, `senderId = frame.meta.user_id ?? frame.id`, `frame.meta` flattened to strings into `extraContext`). The `deliver` callback closes over the inbound `frame.id` and the live `WebSocket`, wrapping the agent's reply into a `ChannelOutboundFrame` (`reply_to: frame.id`, fresh `id`/`ts`).
+
+Configuration mapping (`@vibeus/claude-code-channel` env var → `channels.vibe-bridge.<key>` in `openclaw.json`): `VIBE_PAT` → `pat`, `VIBE_EVENT_TYPE` → `event_type`, `VIBE_BRIDGE_URL` → `bridge_url`, `VIBE_BACKEND` → `backend`, `VIBE_RECONNECT_MS` → `reconnect_ms`. The setup wizard accepts `token`/`audience`/`baseUrl` from `ChannelSetupInput` and patches them into `pat`/`event_type`/`bridge_url`; `backend` and `reconnect_ms` require editing `openclaw.json` directly.
 
 ## CI
 
@@ -93,3 +106,7 @@ Release procedure (run by Claude on request):
 5. To dry-run without tagging: `gh workflow run release-claude-code-channel.yml -f dry-run=true`.
 
 Do not bump or tag without the user's explicit go-ahead — releases are user-triggered.
+
+## Releasing `@vibeus/openclaw-channel`
+
+Not currently published. The package is `private: true` in `package.json` and has no build step or release workflow — OpenClaw loads the TypeScript source directly. Distribution is expected to happen via local path or git URL (e.g. `openclaw plugins add <path>`) rather than npm. If we ever want to publish, model the build/release pipeline on `@vibeus/claude-code-channel` (CLI release), not on `@vibeus/bridge-contracts` (library release) — but that decision should come from the user.

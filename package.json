@@ -11,7 +11,7 @@
     "format": "biome format --write",
     "check:fix": "biome check --write",
     "check": "biome check",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit && bun run --cwd packages/openclaw-channel typecheck"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.13",
