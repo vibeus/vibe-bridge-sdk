@@ -1,6 +1,6 @@
 {
   "name": "vibe-bridge",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "description": "OpenClaw channel plugin that bridges WebSocket frames to OpenClaw via @vibeus/bridge-contracts.",
   "license": "MIT",
