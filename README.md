@@ -57,7 +57,15 @@ To register the bridge as an MCP server for Claude Code itself, add it to `.mcp.
 
 ## Quick start — OpenClaw
 
-`@vibeus/openclaw-channel` is loaded by the OpenClaw host as TypeScript source — no separate process. Install it as a plugin in your OpenClaw checkout (e.g. `openclaw plugins add <path-to-this-package>`), then configure the `vibe-bridge` channel in `openclaw.json`:
+`@vibeus/openclaw-channel` is loaded in-process by the OpenClaw host. Build the compiled JS twin (required by `openclaw@2026.5.x`'s installer; `dist/` is gitignored) and install it as a plugin in your OpenClaw checkout:
+
+```sh
+bun install
+bun run --cwd packages/openclaw-channel build
+openclaw plugins add <path-to-packages/openclaw-channel>
+```
+
+Then configure the `vibe-bridge` channel in `openclaw.json`:
 
 ```json
 {

@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": false,
+    "outDir": "./dist",
+    "rootDir": "."
+  },
+  "include": ["index.ts", "setup-entry.ts", "src/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}

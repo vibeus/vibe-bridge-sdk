@@ -13,9 +13,8 @@ Add the following to your OpenClaw config (`openclaw.json`):
   "channels": {
     "vibe-bridge": {
       "pat": "your-vibe-pat",
-      "event_type": "your-event-type",
+      "event_type": "memo",
       "bridge_url": "wss://bridge.vibe.us",
-      "backend": "dev",
       "reconnect_ms": 2000,
       "enabled": true
     }

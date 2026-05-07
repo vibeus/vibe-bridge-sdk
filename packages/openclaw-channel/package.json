@@ -1,6 +1,6 @@
 {
-  "name": "@vibeus/openclaw-channel",
-  "version": "0.1.0",
+  "name": "vibe-bridge",
+  "version": "0.2.0",
   "private": true,
   "description": "OpenClaw channel plugin that bridges WebSocket frames to OpenClaw via @vibeus/bridge-contracts.",
   "license": "MIT",
@@ -27,7 +27,9 @@
     }
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist"
   },
   "dependencies": {
     "ws": "^8.18.0"

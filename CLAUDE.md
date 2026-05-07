@@ -51,7 +51,9 @@ The `experimental: { "claude/channel": {} }` capability and the `notifications/c
 
 ### How `@vibeus/openclaw-channel` works
 
-OpenClaw plugins are not separate processes — the host imports the plugin's TypeScript directly. `index.ts` registers the plugin via `defineChannelPluginEntry` (channel id `vibe-bridge`); `setup-entry.ts` exposes the same plugin to OpenClaw's `channels add` CLI via `defineSetupPluginEntry`; `src/runtime.ts` holds the `PluginRuntime` singleton; `src/channel.ts` wires the OpenClaw config/setup adapters; `src/monitor.ts` runs the WebSocket loop.
+OpenClaw plugins are in-process modules (the host imports them directly), but as of `openclaw@2026.5.x` the package installer requires a *compiled* JS twin for any TypeScript entry — it auto-discovers `./dist/<entry>.{js,mjs,cjs}` (and a few siblings) for each `.ts` listed in `openclaw.extensions`/`setupEntry`. So this package keeps `index.ts`/`setup-entry.ts` as the source-of-truth entries in `package.json` *and* ships compiled `dist/index.js` + `dist/setup-entry.js` produced by `bun run --cwd packages/openclaw-channel build`. `dist/` is gitignored — re-build before installing the plugin into an OpenClaw checkout.
+
+`index.ts` registers the plugin via `defineChannelPluginEntry` (channel id `vibe-bridge`); `setup-entry.ts` exposes the same plugin to OpenClaw's `channels add` CLI via `defineSetupPluginEntry`; `src/runtime.ts` holds the `PluginRuntime` singleton; `src/channel.ts` wires the OpenClaw config/setup adapters; `src/monitor.ts` runs the WebSocket loop.
 
 `src/monitor.ts` mirrors `claude-code-channel/channel.ts` — same URL shape (`${bridge_url}/channels/subscribe?event_type=...`), same `Authorization: Bearer ${pat}` + optional `x-vibe-backend` headers, same `unexpected-response` handling, same auto-reconnect — but instead of forwarding frames as MCP notifications it calls `dispatchInboundDirectDmWithRuntime` from `openclaw/plugin-sdk/direct-dm`. Each inbound `ChannelInboundFrame` becomes an OpenClaw direct DM (`messageId = frame.id`, `senderId = frame.meta.user_id ?? frame.id`, `frame.meta` flattened to strings into `extraContext`). The `deliver` callback closes over the inbound `frame.id` and the live `WebSocket`, wrapping the agent's reply into a `ChannelOutboundFrame` (`reply_to: frame.id`, fresh `id`/`ts`).
 
@@ -109,4 +111,12 @@ Do not bump or tag without the user's explicit go-ahead — releases are user-tr
 
 ## Releasing `@vibeus/openclaw-channel`
 
-Not currently published. The package is `private: true` in `package.json` and has no build step or release workflow — OpenClaw loads the TypeScript source directly. Distribution is expected to happen via local path or git URL (e.g. `openclaw plugins add <path>`) rather than npm. If we ever want to publish, model the build/release pipeline on `@vibeus/claude-code-channel` (CLI release), not on `@vibeus/bridge-contracts` (library release) — but that decision should come from the user.
+Not currently published to npm. The package is `private: true` in `package.json` and has no release workflow — distribution is expected via local path or git URL (e.g. `openclaw plugins add <path>`).
+
+It does have a build step now, because `openclaw@2026.5.x`'s installer rejects raw `.ts` entries without a compiled twin:
+
+- `bun run --cwd packages/openclaw-channel build` — `tsc -p tsconfig.build.json` emits `dist/index.js`, `dist/setup-entry.js`, and `dist/src/*.js`. `package.json` keeps `extensions: ["./index.ts"]` and `setupEntry: "./setup-entry.ts"` so the source paths are still authoritative; the validator auto-discovers the `dist/*.js` siblings via `listBuiltRuntimeEntryCandidates`.
+- `bun run --cwd packages/openclaw-channel clean` — remove `dist/`.
+- `dist/` is gitignored (root `.gitignore` excludes `packages/*/dist/`). Always rebuild before pointing OpenClaw at a fresh checkout.
+
+If we ever want to publish to npm, model the release pipeline on `@vibeus/claude-code-channel` (CLI release), not on `@vibeus/bridge-contracts` (library release) — but that decision should come from the user.
