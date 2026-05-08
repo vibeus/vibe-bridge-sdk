@@ -31,11 +31,15 @@ Add the following to your OpenClaw config (`openclaw.json`):
 | `reconnect_ms` | no       | `2000`                 | Delay before reconnecting after the socket closes                        |
 | `enabled`      | no       | `true`                 | Set to `false` to disable the channel                                    |
 
-Or via the CLI (the wizard maps `--token`/`--audience`/`--base-url` onto `pat`/`event_type`/`bridge_url`; `backend` and `reconnect_ms` need a manual edit to `openclaw.json`):
+Or non-interactively via the CLI:
 
 ```sh
-openclaw channels add --channel vibe-bridge --token "<pat>" --audience "<event-type>"
+openclaw channels add --channel vibe-bridge --token "<pat>"
 ```
+
+`--token` populates `pat`, and `event_type` defaults to `memo` when not otherwise set. To use a different `event_type`, run `openclaw channels add` with no flags to launch the interactive wizard (it prompts for `token`/`audience`/`baseUrl`, mapped onto `pat`/`event_type`/`bridge_url`), or edit `openclaw.json` directly. `backend` and `reconnect_ms` always require a manual edit.
+
+> Note: openclaw 2026.5.x only registers custom CLI flags (e.g. `--audience`) for first-party bundled channels, so the non-interactive CLI cannot set `event_type` directly — that's why the plugin defaults it to `memo`.
 
 ## Wire format
 

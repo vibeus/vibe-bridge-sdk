@@ -53,20 +53,24 @@ function resolveBridgeAccount(params: {
   };
 }
 
-// Setup wizard only handles credential-bag fields exposed by ChannelSetupInput:
+// Setup wizard / `channels add` map credential-bag fields onto channel config:
 //   token    -> pat
-//   audience -> event_type
+//   audience -> event_type   (defaults to DEFAULT_EVENT_TYPE if not provided —
+//                             openclaw 2026.5.x doesn't expose --audience as a CLI
+//                             flag for externally-installed plugins, so the
+//                             non-interactive `--token` flow relies on this default)
 //   baseUrl  -> bridge_url
 // Edit `openclaw.json` directly for `backend` (dev-only) and `reconnect_ms`.
+const DEFAULT_EVENT_TYPE = "memo";
+
 const bridgeSetupAdapter = createPatchedAccountSetupAdapter({
   channelKey: "vibe-bridge",
   buildPatch: (input) => {
-    const patch: Record<string, unknown> = {};
+    const patch: Record<string, unknown> = {
+      event_type: input.audience ?? DEFAULT_EVENT_TYPE,
+    };
     if (input.token) {
       patch.pat = input.token;
-    }
-    if (input.audience) {
-      patch.event_type = input.audience;
     }
     if (input.baseUrl) {
       patch.bridge_url = input.baseUrl;

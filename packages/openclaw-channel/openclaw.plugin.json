@@ -5,5 +5,50 @@
     "type": "object",
     "additionalProperties": false,
     "properties": {}
+  },
+  "channelConfigs": {
+    "vibe-bridge": {
+      "label": "Vibe Bridge",
+      "description": "Two-way channel that bridges OpenClaw to the Vibe WebSocket bridge.",
+      "schema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "enabled": { "type": "boolean" },
+          "pat": { "type": "string" },
+          "event_type": { "type": "string" },
+          "bridge_url": { "type": "string" },
+          "backend": { "type": "string" },
+          "reconnect_ms": { "type": "integer", "minimum": 100 }
+        }
+      },
+      "uiHints": {
+        "": {
+          "label": "Vibe Bridge",
+          "help": "Two-way channel that bridges OpenClaw to the Vibe WebSocket bridge."
+        },
+        "pat": {
+          "label": "PAT",
+          "help": "Bearer PAT for the Vibe bridge (sensitive)."
+        },
+        "event_type": {
+          "label": "Event Type",
+          "help": "Subscription channel name on the bridge (e.g. 'memo')."
+        },
+        "bridge_url": {
+          "label": "Bridge URL",
+          "help": "WebSocket bridge URL. Default wss://bridge.vibe.us. Use ws://localhost:8787 for a local wrangler dev."
+        },
+        "backend": {
+          "label": "Backend",
+          "help": "Set to 'dev' to add x-vibe-backend: dev on upgrade requests."
+        },
+        "reconnect_ms": {
+          "label": "Reconnect (ms)",
+          "help": "Auto-reconnect interval after WebSocket close (default 2000)."
+        }
+      }
+    }
   }
 }
