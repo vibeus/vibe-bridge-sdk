@@ -111,12 +111,39 @@ Do not bump or tag without the user's explicit go-ahead — releases are user-tr
 
 ## Releasing `@vibeus/openclaw-channel`
 
-Not currently published to npm. The package is `private: true` in `package.json` and has no release workflow — distribution is expected via local path or git URL (e.g. `openclaw plugins add <path>`).
+The package is `private: true` in `package.json` (not published to npm) and is distributed through [ClawHub](https://clawhub.ai) as a `code-plugin`. The package name on ClawHub is `vibe-bridge` (the OpenClaw plugin id), not `@vibeus/openclaw-channel`.
 
-It does have a build step now, because `openclaw@2026.5.x`'s installer rejects raw `.ts` entries without a compiled twin:
+Build (required before any publish — the OpenClaw plugin installer needs the compiled `dist/*.js` twins):
 
 - `bun run --cwd packages/openclaw-channel build` — `tsc -p tsconfig.build.json` emits `dist/index.js`, `dist/setup-entry.js`, and `dist/src/*.js`. `package.json` keeps `extensions: ["./index.ts"]` and `setupEntry: "./setup-entry.ts"` so the source paths are still authoritative; the validator auto-discovers the `dist/*.js` siblings via `listBuiltRuntimeEntryCandidates`.
 - `bun run --cwd packages/openclaw-channel clean` — remove `dist/`.
 - `dist/` is gitignored (root `.gitignore` excludes `packages/*/dist/`). Always rebuild before pointing OpenClaw at a fresh checkout.
 
-If we ever want to publish to npm, model the release pipeline on `@vibeus/claude-code-channel` (CLI release), not on `@vibeus/bridge-contracts` (library release) — but that decision should come from the user.
+Manual publish (reference; CI does the same):
+
+```
+bunx clawhub login --token "$CLAWHUB_TOKEN" --no-browser
+bunx clawhub package publish \
+  --family code-plugin \
+  --display-name "Vibe Bridge" \
+  --source-repo vibeus/vibe-bridge-sdk \
+  --source-commit <SHA> \
+  --source-ref <ref> \
+  --source-path packages/openclaw-channel \
+  packages/openclaw-channel
+```
+
+CI release pipeline:
+
+- `.github/workflows/release-openclaw-channel.yml` builds, then runs `clawhub login` + `clawhub package publish` with the same flags as the manual command above. Triggered by tag push (`openclaw-channel-v*`) or `workflow_dispatch` (with optional `dry-run: true`). The CI auto-fills `--source-repo`, `--source-commit`, and `--source-ref` from `$GITHUB_REPOSITORY`/`$GITHUB_SHA`/`$GITHUB_REF_NAME`.
+- Auth: ClawHub uses a long-lived API token (no OIDC trusted publishing for this CLI flow). Stored as the `CLAWHUB_TOKEN` repo secret — generate one at clawhub.ai → Settings → API tokens. The workflow fails fast if the secret is unset.
+- The `clawhub` CLI version is pinned via `CLAWHUB_CLI_VERSION` in the workflow env block — bump it deliberately when upgrading.
+
+Release procedure (run by Claude on request):
+
+1. Bump `packages/openclaw-channel/package.json` `"version"` (semver). The version is what ClawHub records for the release; tag must match.
+2. Commit the bump as `chore(openclaw-channel): release vX.Y.Z` and push to `main`.
+3. Tag: `git tag openclaw-channel-vX.Y.Z && git push origin openclaw-channel-vX.Y.Z`. The tag version must match `package.json`; the workflow verifies and fails otherwise.
+4. The release workflow handles the rest. To dry-run without tagging: `gh workflow run release-openclaw-channel.yml -f dry-run=true`.
+
+Do not bump or tag without the user's explicit go-ahead — releases are user-triggered.
