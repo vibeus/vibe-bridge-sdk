@@ -7,7 +7,6 @@ export type BridgeMonitorOptions = {
   pat: string;
   eventType: string;
   bridgeUrl: string;
-  backend?: string;
   reconnectMs: number;
   accountId: string;
   config: OpenClawConfig;
@@ -38,18 +37,8 @@ export async function startBridgeMonitor(options: BridgeMonitorOptions): Promise
 }
 
 function runOneConnection(options: BridgeMonitorOptions): Promise<void> {
-  const {
-    pat,
-    eventType,
-    bridgeUrl,
-    backend,
-    accountId,
-    config,
-    runtime,
-    abortSignal,
-    log,
-    error,
-  } = options;
+  const { pat, eventType, bridgeUrl, accountId, config, runtime, abortSignal, log, error } =
+    options;
 
   const url = (() => {
     const u = new URL(bridgeUrl);
@@ -61,9 +50,6 @@ function runOneConnection(options: BridgeMonitorOptions): Promise<void> {
   const headers: Record<string, string> = {
     authorization: `Bearer ${pat}`,
   };
-  if (backend) {
-    headers["x-vibe-backend"] = backend;
-  }
 
   return new Promise<void>((resolve, reject) => {
     log?.(`[vibe-bridge] [${accountId}] connecting to ${url}`);

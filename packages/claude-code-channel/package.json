@@ -1,6 +1,6 @@
 {
   "name": "@vibeus/claude-code-channel",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "MCP stdio server that bridges a WebSocket peer to a Claude Code session.",
   "license": "MIT",
   "type": "module",

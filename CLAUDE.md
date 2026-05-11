@@ -20,7 +20,7 @@ Run the WebSocket↔MCP bridge locally:
 
 - `bun packages/claude-code-channel/channel.ts` (or `bun run --cwd packages/claude-code-channel start`)
 - Required env: `VIBE_PAT` (Bearer PAT for the bridge), `VIBE_EVENT_TYPE` (subscription channel name).
-- Optional env: `VIBE_BRIDGE_URL` (default `wss://bridge.vibe.us` — the prod [vibe-bridge](https://github.com/vibeus/vibe-bridge) worker; point at `ws://localhost:8787` to talk to a local `wrangler dev`), `VIBE_BACKEND` (set to `dev` to add `x-vibe-backend: dev`), `VIBE_RECONNECT_MS` (default `2000`).
+- Optional env: `VIBE_BRIDGE_URL` (default `wss://api.vibe.us` — the prod [vibe-bridge](https://github.com/vibeus/vibe-bridge) deployment; point at `ws://localhost:8787` to talk to a local `wrangler dev`), `VIBE_RECONNECT_MS` (default `2000`). Environment selection is by URL — no header opt-in.
 
 `.mcp.json` is gitignored and registers the bridge as the `websocket-bridge` MCP server for Claude Code itself — editing it changes how *this repo's* Claude Code session talks to the bridge.
 
@@ -55,9 +55,9 @@ OpenClaw plugins are in-process modules (the host imports them directly), but as
 
 `index.ts` registers the plugin via `defineChannelPluginEntry` (channel id `vibe-bridge`); `setup-entry.ts` exposes the same plugin to OpenClaw's `channels add` CLI via `defineSetupPluginEntry`; `src/runtime.ts` holds the `PluginRuntime` singleton; `src/channel.ts` wires the OpenClaw config/setup adapters; `src/monitor.ts` runs the WebSocket loop.
 
-`src/monitor.ts` mirrors `claude-code-channel/channel.ts` — same URL shape (`${bridge_url}/channels/subscribe?event_type=...`), same `Authorization: Bearer ${pat}` + optional `x-vibe-backend` headers, same `unexpected-response` handling, same auto-reconnect — but instead of forwarding frames as MCP notifications it calls `dispatchInboundDirectDmWithRuntime` from `openclaw/plugin-sdk/direct-dm`. Each inbound `ChannelInboundFrame` becomes an OpenClaw direct DM (`messageId = frame.id`, `senderId = frame.meta.user_id ?? frame.id`, `frame.meta` flattened to strings into `extraContext`). The `deliver` callback closes over the inbound `frame.id` and the live `WebSocket`, wrapping the agent's reply into a `ChannelOutboundFrame` (`reply_to: frame.id`, fresh `id`/`ts`).
+`src/monitor.ts` mirrors `claude-code-channel/channel.ts` — same URL shape (`${bridge_url}/channels/subscribe?event_type=...`), same `Authorization: Bearer ${pat}` header, same `unexpected-response` handling, same auto-reconnect — but instead of forwarding frames as MCP notifications it calls `dispatchInboundDirectDmWithRuntime` from `openclaw/plugin-sdk/direct-dm`. Each inbound `ChannelInboundFrame` becomes an OpenClaw direct DM (`messageId = frame.id`, `senderId = frame.meta.user_id ?? frame.id`, `frame.meta` flattened to strings into `extraContext`). The `deliver` callback closes over the inbound `frame.id` and the live `WebSocket`, wrapping the agent's reply into a `ChannelOutboundFrame` (`reply_to: frame.id`, fresh `id`/`ts`).
 
-Configuration mapping (`@vibeus/claude-code-channel` env var → `channels.vibe-bridge.<key>` in `openclaw.json`): `VIBE_PAT` → `pat`, `VIBE_EVENT_TYPE` → `event_type`, `VIBE_BRIDGE_URL` → `bridge_url`, `VIBE_BACKEND` → `backend`, `VIBE_RECONNECT_MS` → `reconnect_ms`. The setup wizard accepts `token`/`audience`/`baseUrl` from `ChannelSetupInput` and patches them into `pat`/`event_type`/`bridge_url`; `backend` and `reconnect_ms` require editing `openclaw.json` directly.
+Configuration mapping (`@vibeus/claude-code-channel` env var → `channels.vibe-bridge.<key>` in `openclaw.json`): `VIBE_PAT` → `pat`, `VIBE_EVENT_TYPE` → `event_type`, `VIBE_BRIDGE_URL` → `bridge_url`, `VIBE_RECONNECT_MS` → `reconnect_ms`. The setup wizard accepts `token`/`audience`/`baseUrl` from `ChannelSetupInput` and patches them into `pat`/`event_type`/`bridge_url`; `reconnect_ms` requires editing `openclaw.json` directly.
 
 ## CI
 

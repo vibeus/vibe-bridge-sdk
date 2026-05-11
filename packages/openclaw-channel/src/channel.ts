@@ -17,7 +17,6 @@ export type BridgeAccountConfig = {
   pat?: string;
   event_type?: string;
   bridge_url?: string;
-  backend?: string;
   reconnect_ms?: number;
 };
 
@@ -27,7 +26,7 @@ export type ResolvedBridgeAccount = {
   config: BridgeAccountConfig;
 };
 
-const DEFAULT_BRIDGE_URL = "wss://bridge.vibe.us";
+const DEFAULT_BRIDGE_URL = "wss://api.vibe.us";
 const DEFAULT_RECONNECT_MS = 2000;
 
 const { listAccountIds, resolveDefaultAccountId } = createAccountListHelpers("vibe-bridge");
@@ -47,7 +46,6 @@ function resolveBridgeAccount(params: {
       pat: channelConfig.pat,
       event_type: channelConfig.event_type,
       bridge_url: channelConfig.bridge_url,
-      backend: channelConfig.backend,
       reconnect_ms: channelConfig.reconnect_ms,
     },
   };
@@ -60,7 +58,7 @@ function resolveBridgeAccount(params: {
 //                             flag for externally-installed plugins, so the
 //                             non-interactive `--token` flow relies on this default)
 //   baseUrl  -> bridge_url
-// Edit `openclaw.json` directly for `backend` (dev-only) and `reconnect_ms`.
+// Edit `openclaw.json` directly for `reconnect_ms`.
 const DEFAULT_EVENT_TYPE = "memo";
 
 const bridgeSetupAdapter = createPatchedAccountSetupAdapter({
@@ -84,7 +82,7 @@ const bridgeConfigAdapter = createScopedChannelConfigAdapter<ResolvedBridgeAccou
   listAccountIds,
   resolveAccount: adaptScopedAccountAccessor(resolveBridgeAccount),
   defaultAccountId: resolveDefaultAccountId,
-  clearBaseFields: ["pat", "event_type", "bridge_url", "backend", "reconnect_ms"],
+  clearBaseFields: ["pat", "event_type", "bridge_url", "reconnect_ms"],
   resolveAllowFrom: () => null,
   formatAllowFrom: () => [],
 });
@@ -137,7 +135,6 @@ export const bridgePlugin = createChatChannelPlugin({
               pat,
               eventType: event_type,
               bridgeUrl: account.config.bridge_url ?? DEFAULT_BRIDGE_URL,
-              backend: account.config.backend,
               reconnectMs: account.config.reconnect_ms ?? DEFAULT_RECONNECT_MS,
               accountId: account.accountId,
               config: ctx.cfg,

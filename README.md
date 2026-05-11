@@ -34,8 +34,7 @@ Configure the bridge with environment variables:
 | --- | --- | --- | --- |
 | `VIBE_PAT` | yes | — | Bearer personal access token for the bridge |
 | `VIBE_EVENT_TYPE` | yes | — | Subscription channel name (passed as `?event_type=`) |
-| `VIBE_BRIDGE_URL` | no | `wss://bridge.vibe.us` | Bridge base URL; point at `ws://localhost:8787` for a local `wrangler dev` |
-| `VIBE_BACKEND` | no | — | Set to `dev` to add `x-vibe-backend: dev` |
+| `VIBE_BRIDGE_URL` | no | `wss://api.vibe.us` | Bridge base URL; point at `ws://localhost:8787` for a local `wrangler dev` |
 | `VIBE_RECONNECT_MS` | no | `2000` | Reconnect delay after socket close |
 
 To register the bridge as an MCP server for Claude Code itself, add it to `.mcp.json` (gitignored — local only):
@@ -84,7 +83,7 @@ Or via the CLI:
 openclaw channels add --channel vibe-bridge --token "<bearer-pat>" --audience "<event-type>"
 ```
 
-See [`packages/openclaw-channel/README.md`](./packages/openclaw-channel/README.md) for the full config schema (including `bridge_url`, `backend`, `reconnect_ms`) and the env-var equivalence table to `@vibeus/claude-code-channel`.
+See [`packages/openclaw-channel/README.md`](./packages/openclaw-channel/README.md) for the full config schema (including `bridge_url`, `reconnect_ms`) and the env-var equivalence table to `@vibeus/claude-code-channel`.
 
 ## Development
 

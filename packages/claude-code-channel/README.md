@@ -29,8 +29,7 @@ Register the bridge as an MCP server with Claude Code. Example `.mcp.json`:
 | ------------------ | :------: | ----------------------- | -------------------------------------------------------------------------------------------- |
 | `VIBE_PAT`         |   yes    | —                       | Personal access token sent as `Authorization: Bearer <pat>` on the WebSocket upgrade.        |
 | `VIBE_EVENT_TYPE`  |   yes    | —                       | Subscription channel name. The bridge derives `user_id` from the PAT.                        |
-| `VIBE_BRIDGE_URL`  |    no    | `wss://bridge.vibe.us`  | Base URL of the bridge worker. The CLI appends `/channels/subscribe?event_type=...`.         |
-| `VIBE_BACKEND`     |    no    | —                       | Set to `dev` to send `x-vibe-backend: dev` (opt into the dev-tier backend on dev deploys).   |
+| `VIBE_BRIDGE_URL`  |    no    | `wss://api.vibe.us`     | Base URL of the bridge. The CLI appends `/channels/subscribe?event_type=...`.                |
 | `VIBE_RECONNECT_MS`|    no    | `2000`                  | Delay (ms) before reconnecting after the socket closes.                                      |
 
 The CLI exits with a non-zero status if `VIBE_PAT` or `VIBE_EVENT_TYPE` is missing.

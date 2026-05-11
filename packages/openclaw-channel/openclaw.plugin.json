@@ -19,7 +19,6 @@
           "pat": { "type": "string" },
           "event_type": { "type": "string" },
           "bridge_url": { "type": "string" },
-          "backend": { "type": "string" },
           "reconnect_ms": { "type": "integer", "minimum": 100 }
         }
       },
@@ -38,11 +37,7 @@
         },
         "bridge_url": {
           "label": "Bridge URL",
-          "help": "WebSocket bridge URL. Default wss://bridge.vibe.us. Use ws://localhost:8787 for a local wrangler dev."
-        },
-        "backend": {
-          "label": "Backend",
-          "help": "Set to 'dev' to add x-vibe-backend: dev on upgrade requests."
+          "help": "WebSocket bridge URL. Default wss://api.vibe.us. Use ws://localhost:8787 for a local wrangler dev."
         },
         "reconnect_ms": {
           "label": "Reconnect (ms)",

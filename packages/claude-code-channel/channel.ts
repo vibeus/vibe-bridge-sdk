@@ -8,10 +8,9 @@ import WebSocket from "ws";
 // stderr only — stdout is reserved for the MCP transport
 const log = (...args: unknown[]) => console.error("[ws-channel]", ...args);
 
-const BRIDGE_URL = process.env.VIBE_BRIDGE_URL ?? "wss://bridge.vibe.us";
+const BRIDGE_URL = process.env.VIBE_BRIDGE_URL ?? "wss://api.vibe.us";
 const EVENT_TYPE = process.env.VIBE_EVENT_TYPE;
 const PAT = process.env.VIBE_PAT;
-const BACKEND = process.env.VIBE_BACKEND;
 const RECONNECT_MS = Number(process.env.VIBE_RECONNECT_MS ?? 2000);
 
 if (!EVENT_TYPE) {
@@ -33,9 +32,6 @@ const subscribeUrl = (() => {
 const headers: Record<string, string> = {
   authorization: `Bearer ${PAT}`,
 };
-if (BACKEND) {
-  headers["x-vibe-backend"] = BACKEND;
-}
 
 const mcp = new Server(
   { name: "websocket-bridge", version: "0.0.1" },
